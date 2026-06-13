@@ -4,6 +4,9 @@ from typing import Annotated
 
 import typer
 
+from vpoint_scanner.config import get_settings
+from vpoint_scanner.sources import SourceError, collect_vpoint_public
+
 app = typer.Typer(
     help="Collect V Point campaign information for conservative local review.",
     no_args_is_help=True,
@@ -30,10 +33,36 @@ def scrape(
         typer.Option(help="Save public campaign evidence screenshots."),
     ] = False,
 ) -> None:
-    """Expose the future public campaign scraping interface."""
+    """Collect visible campaign cards from configured public sources."""
 
-    del source, screenshots
-    typer.echo(PLACEHOLDER.format(feature="Scraping"))
+    source_name = source or "vpoint_public"
+    if source_name != "vpoint_public":
+        raise typer.BadParameter(
+            f"unsupported source: {source_name}",
+            param_hint="--source",
+        )
+    if screenshots:
+        typer.echo(
+            "Screenshot capture is introduced in Phase 06; "
+            "no screenshot will be saved by this command.",
+            err=True,
+        )
+
+    settings = get_settings()
+    try:
+        campaigns = collect_vpoint_public(
+            url=settings.vpoint_public_url,
+            timeout_ms=settings.browser_timeout_ms,
+        )
+    except SourceError as exc:
+        typer.echo(f"Scrape failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(
+        f"Collected {len(campaigns)} campaign cards from {settings.vpoint_public_url}"
+    )
+    for campaign in campaigns:
+        typer.echo(f"- {campaign.title}")
 
 
 @app.command("export")

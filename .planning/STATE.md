@@ -2,22 +2,22 @@
 
 ## Current status
 
-- Active phase: `03-vpoint-public-list-scraping`
+- Active phase: `04-sqlite-persistence-and-deduplication`
 - Phase status: `not_started`
 - Overall status: `in_progress`
 - Last updated: 2026-06-14
 
 ## Current repository state
 
-Phases 01 and 02 provide an installable project, CLI shell, safe configuration,
-canonical Pydantic campaign schema, Japanese text/date normalization, URL-first
-identity, fallback identity, and status calculation. Scraping, persistence, and
-campaign export behavior remain unimplemented.
+Phases 01 through 03 provide the project foundation, canonical campaign domain,
+fixture-backed card parser, and a gentle one-page Playwright collector for the
+approved public V Point all-campaigns list. Persistence and campaign export
+remain unimplemented.
 
 ## Active phase objective
 
-Collect and parse every visible card from the approved public V Point campaign
-list while preserving raw evidence and avoiding detail-page traversal.
+Persist normalized campaigns in local SQLite with deterministic URL-first and
+title-period fallback upserts.
 
 ## Roadmap
 
@@ -25,7 +25,7 @@ list while preserving raw evidence and avoiding detail-page traversal.
 |---:|---|---|
 | 01 | Project bootstrap | `done` |
 | 02 | Campaign schema and normalization | `done` |
-| 03 | V Point public list scraping | `not_started` |
+| 03 | V Point public list scraping | `done` |
 | 04 | SQLite persistence and deduplication | `not_started` |
 | 05 | JSON export and summary | `not_started` |
 | 06 | Detail page extraction and screenshots | `not_started` |
@@ -36,6 +36,11 @@ list while preserving raw evidence and avoiding detail-page traversal.
 
 ## Decisions
 
+- Use `https://cpn.tsite.jp/list/all` as the approved V Point public list source.
+- Parse its rendered card DOM and optionally enrich from embedded public
+  `__NEXT_DATA__`; do not call hidden APIs.
+- Preserve semantic SPA fragments such as `#/detail2/<campaign-id>` during URL
+  canonicalization because the approved source uses them as campaign routes.
 - Use Python 3.11+ and a `src/vpoint_scanner` package layout.
 - Use Typer for the CLI, Pydantic for external schemas and configuration,
   Playwright for browser automation, and SQLAlchemy for SQLite.
@@ -61,6 +66,14 @@ None.
 
 ## Recent changes
 
+- Completed Phase 03 and its six UAT cases with 62 passing tests.
+- Approved live UAT collected 51 cards from `https://cpn.tsite.jp/list/all`
+  using one Playwright page and created no database or export.
+- Added fixture-backed DOM and metadata parsing, safe source errors, CLI list
+  collection, and semantic hash-route canonicalization.
+- Confirmed the Phase 03 approved source and current server-rendered structure:
+  `/list/all` exposed 51 cards in one page on 2026-06-14.
+- Expanded Phase 03 parsing, browser safety, failure, CLI, and UAT contracts.
 - Completed Phase 02 and its six UAT cases with 46 passing tests.
 - Added the canonical campaign schema, conservative Japanese date parsing,
   canonical URL and fallback identities, and date-based status calculation.
@@ -76,5 +89,4 @@ None.
 
 ## Next action
 
-Confirm the current approved V Point public campaign page, expand Phase 03
-planning and UAT, then implement fixture-backed list scraping.
+Expand Phase 04 persistence and deduplication planning/UAT, then implement it.

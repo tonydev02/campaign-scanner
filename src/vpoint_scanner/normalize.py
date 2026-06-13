@@ -32,6 +32,7 @@ _JAPANESE_UNTIL = re.compile(
     r"(?P<end_month>\d{1,2})月(?P<end_day>\d{1,2})日まで$"
 )
 _TRACKING_PARAMETERS = {"fbclid", "gclid"}
+_SEMANTIC_FRAGMENT = re.compile(r"^/?(?:detail2?|campaign)/[^/?#]+")
 
 
 @dataclass(frozen=True)
@@ -77,7 +78,8 @@ def canonicalize_url(url: str, base_url: str | None = None) -> str | None:
         and key.lower() not in _TRACKING_PARAMETERS
     ]
     query = urlencode(sorted(query_items))
-    return urlunsplit((scheme, hostname, path, query, ""))
+    fragment = parts.fragment if _SEMANTIC_FRAGMENT.match(parts.fragment) else ""
+    return urlunsplit((scheme, hostname, path, query, fragment))
 
 
 def parse_visible_period(

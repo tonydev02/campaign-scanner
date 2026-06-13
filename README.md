@@ -1,9 +1,9 @@
 # V Point Campaign Scanner
 
 V Point Campaign Scanner is a local tool for collecting campaign information
-and reviewing it without encouraging extra spending. The project is currently
-in Phase 01: the package, configuration, logging, and CLI shell are available,
-but scraping, database storage, and JSON export are not implemented yet.
+and reviewing it without encouraging extra spending. It currently collects all
+visible cards from the public V Point campaign list. Database storage and JSON
+export are introduced in later phases.
 
 ## Requirements
 
@@ -20,6 +20,7 @@ With uv:
 
 ```bash
 uv sync --extra dev
+uv run playwright install chromium
 uv run python -m vpoint_scanner --help
 ```
 
@@ -29,21 +30,30 @@ With a standard virtual environment:
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
+playwright install chromium
 python -m vpoint_scanner --help
 ```
 
 ## CLI
 
-The current commands expose the planned interface and return an honest
-placeholder message without network, browser, database, or export side effects:
+The `scrape` command opens the approved public all-campaigns page once with
+Playwright and prints the collected card count and titles. It does not visit
+campaign details, click entry controls, or write a database:
 
 ```bash
 python -m vpoint_scanner scrape --source vpoint_public
-python -m vpoint_scanner scrape --screenshots
+```
+
+The following command surfaces remain placeholders until their planned phases:
+
+```bash
 python -m vpoint_scanner export --format json --output data/exports/campaigns.json
 python -m vpoint_scanner export --ending-within-days 7
 python -m vpoint_scanner summary
 ```
+
+`scrape --screenshots` explicitly reports that screenshot capture begins in
+Phase 06.
 
 ## Configuration
 
@@ -69,4 +79,5 @@ uv run --extra dev ruff check .
 uv run --extra dev ruff format --check .
 ```
 
-Tests in Phase 01 use no browser and make no network requests.
+Automated tests use saved fixtures and make no network requests. Live scraping
+is an explicit CLI action.

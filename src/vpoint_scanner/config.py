@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     exports_dir: Path | None = None
     database_path: Path | None = None
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    vpoint_public_url: str = "https://cpn.tsite.jp/list/all"
+    browser_timeout_ms: int = 30_000
 
     extra_spending_allowed: Literal[0] = 0
     auto_entry_allowed: Literal[False] = False

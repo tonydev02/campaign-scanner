@@ -1,6 +1,10 @@
+from datetime import UTC, datetime
+
 from typer.testing import CliRunner
 
 from vpoint_scanner.cli import app
+from vpoint_scanner.schemas import Campaign
+from vpoint_scanner.sources import SourceError
 
 runner = CliRunner()
 
@@ -31,9 +35,8 @@ def test_export_help_lists_future_options() -> None:
     assert "--ending-within-days" in result.stdout
 
 
-def test_placeholder_commands_are_honest_and_successful(tmp_path) -> None:
+def test_later_phase_placeholder_commands_are_honest_and_successful(tmp_path) -> None:
     commands = [
-        ["scrape", "--source", "vpoint_public", "--screenshots"],
         ["export", "--format", "json", "--output", str(tmp_path / "campaigns.json")],
         ["summary"],
     ]
@@ -45,6 +48,64 @@ def test_placeholder_commands_are_honest_and_successful(tmp_path) -> None:
         assert "No campaigns were processed" in result.stdout
 
     assert list(tmp_path.iterdir()) == []
+
+
+def test_scrape_reports_collected_campaigns(monkeypatch) -> None:
+    campaign = Campaign(
+        source="https://cpn.tsite.jp/list/all",
+        source_type="vpoint_public",
+        title="テストキャンペーン",
+        scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
+    )
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.collect_vpoint_public",
+        lambda **_: [campaign],
+    )
+
+    result = runner.invoke(app, ["scrape", "--source", "vpoint_public"])
+
+    assert result.exit_code == 0
+    assert "Collected 1 campaign cards" in result.stdout
+    assert "テストキャンペーン" in result.stdout
+
+
+def test_scrape_rejects_unsupported_source() -> None:
+    result = runner.invoke(app, ["scrape", "--source", "unknown"])
+
+    assert result.exit_code != 0
+    assert "unsupported source" in result.output
+
+
+def test_scrape_reports_source_failure_without_traceback(monkeypatch) -> None:
+    def fail(**_: object) -> list[Campaign]:
+        raise SourceError("blocked by source")
+
+    monkeypatch.setattr("vpoint_scanner.cli.collect_vpoint_public", fail)
+
+    result = runner.invoke(app, ["scrape"])
+
+    assert result.exit_code == 1
+    assert "Scrape failed: blocked by source" in result.output
+    assert "Traceback" not in result.output
+
+
+def test_scrape_explains_screenshot_phase(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.collect_vpoint_public",
+        lambda **_: [
+            Campaign(
+                source="https://cpn.tsite.jp/list/all",
+                source_type="vpoint_public",
+                title="テスト",
+                scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
+            )
+        ],
+    )
+
+    result = runner.invoke(app, ["scrape", "--screenshots"])
+
+    assert result.exit_code == 0
+    assert "introduced in Phase 06" in result.output
 
 
 def test_negative_ending_window_is_rejected() -> None:

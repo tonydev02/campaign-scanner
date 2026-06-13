@@ -84,6 +84,15 @@ def test_canonicalize_url_normalizes_equivalent_variants() -> None:
     )
 
 
+def test_canonicalize_url_preserves_semantic_hash_routes() -> None:
+    first = canonicalize_url("https://lot.tsite.jp/#/detail2/lt001")
+    second = canonicalize_url("https://lot.tsite.jp/#/detail2/lt002")
+
+    assert first == "https://lot.tsite.jp/#/detail2/lt001"
+    assert second == "https://lot.tsite.jp/#/detail2/lt002"
+    assert first != second
+
+
 @pytest.mark.parametrize("url", ["", "/relative", "javascript:void(0)", "ftp://x.jp/a"])
 def test_canonicalize_url_rejects_non_http_urls(url: str) -> None:
     assert canonicalize_url(url) is None
