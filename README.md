@@ -38,11 +38,13 @@ python -m vpoint_scanner --help
 
 The `scrape` command opens the approved public all-campaigns page once with
 Playwright and upserts the collected cards into
-`data/vpoint_campaigns.sqlite3`. It does not visit campaign details or click
-entry controls:
+`data/vpoint_campaigns.sqlite3`. It sequentially enriches only same-origin
+`cpn.tsite.jp/detail/...` pages and never clicks entry controls or opens
+third-party campaign links:
 
 ```bash
 python -m vpoint_scanner scrape --source vpoint_public
+python -m vpoint_scanner scrape --screenshots
 ```
 
 Export all non-expired and unknown-date campaigns, export an inclusive ending
@@ -54,8 +56,9 @@ python -m vpoint_scanner export --ending-within-days 7
 python -m vpoint_scanner summary
 ```
 
-`scrape --screenshots` explicitly reports that screenshot capture begins in
-Phase 06.
+Screenshots are optional and limited to enriched public detail pages under
+`data/screenshots/public/`. They may contain campaign marketing content but must
+never be used for private account pages.
 
 ## Configuration
 

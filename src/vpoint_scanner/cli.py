@@ -47,18 +47,18 @@ def scrape(
             f"unsupported source: {source_name}",
             param_hint="--source",
         )
-    if screenshots:
-        typer.echo(
-            "Screenshot capture is introduced in Phase 06; "
-            "no screenshot will be saved by this command.",
-            err=True,
-        )
-
     settings = get_settings()
     try:
-        campaigns = collect_vpoint_public(
+        collection = collect_vpoint_public(
             url=settings.vpoint_public_url,
             timeout_ms=settings.browser_timeout_ms,
+            screenshots=screenshots,
+            screenshots_dir=(
+                settings.screenshots_dir / "public"
+                if settings.screenshots_dir is not None
+                else None
+            ),
+            detail_delay_seconds=settings.detail_delay_seconds,
         )
     except SourceError as exc:
         typer.echo(f"Scrape failed: {exc}", err=True)
@@ -70,14 +70,21 @@ def scrape(
     try:
         engine = create_sqlite_engine(settings.database_path)
         initialize_database(engine)
-        result = persist_campaigns(engine, campaigns)
+        result = persist_campaigns(engine, collection.campaigns)
     except PersistenceError as exc:
         typer.echo(f"Scrape failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
     typer.echo(
-        f"Collected {len(campaigns)} campaign cards from {settings.vpoint_public_url}"
+        f"Collected {len(collection.campaigns)} campaign cards from "
+        f"{settings.vpoint_public_url}"
     )
+    typer.echo(
+        f"Details: {collection.detail_enriched} enriched, "
+        f"{collection.detail_skipped} skipped, "
+        f"{collection.detail_failed} failed"
+    )
+    typer.echo(f"Screenshots: {collection.screenshots_saved} saved")
     typer.echo(
         f"Persisted {result.inserted} inserted and {result.updated} updated "
         f"campaigns to {settings.database_path}"

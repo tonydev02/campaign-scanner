@@ -47,6 +47,12 @@ def test_data_directory_override_derives_child_paths(tmp_path) -> None:
     assert settings.database_path == tmp_path / "vpoint_campaigns.sqlite3"
 
 
+@pytest.mark.parametrize("delay", [0.9, 3.1])
+def test_detail_delay_stays_within_polite_limits(delay: float) -> None:
+    with pytest.raises(ValidationError):
+        Settings(detail_delay_seconds=delay)
+
+
 def test_logging_configuration_is_idempotent() -> None:
     logger = logging.getLogger(LOGGER_NAME)
     original_handlers = logger.handlers.copy()

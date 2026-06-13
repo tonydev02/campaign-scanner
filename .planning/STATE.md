@@ -2,21 +2,21 @@
 
 ## Current status
 
-- Active phase: `06-detail-page-extraction-and-screenshots`
+- Active phase: `07-additional-public-sources`
 - Phase status: `not_started`
 - Overall status: `in_progress`
 - Last updated: 2026-06-14
 
 ## Current repository state
 
-Phases 01 through 05 provide the project foundation, canonical domain, gentle
-public collector, atomic SQLite upsert, UTF-8 JSON export, and current-date
-database summary. Detail enrichment and screenshots remain unimplemented.
+Phases 01 through 06 provide the project foundation, canonical domain, gentle
+public list/detail collection, conservative fact extraction, optional public
+screenshots, atomic SQLite upsert, UTF-8 JSON export, and current-date summary.
 
 ## Active phase objective
 
-Enrich eligible public campaigns from detail pages and optionally preserve
-public screenshots without interacting with entry/application controls.
+Add a separately approved public campaign source without weakening the existing
+safety, evidence, and deduplication behavior.
 
 ## Roadmap
 
@@ -27,7 +27,7 @@ public screenshots without interacting with entry/application controls.
 | 03 | V Point public list scraping | `done` |
 | 04 | SQLite persistence and deduplication | `done` |
 | 05 | JSON export and summary | `done` |
-| 06 | Detail page extraction and screenshots | `not_started` |
+| 06 | Detail page extraction and screenshots | `done` |
 | 07 | Additional public sources | `not_started` |
 | 08 | LLM fact extraction | `not_started` |
 | 09 | Conservative campaign labeling | `not_started` |
@@ -35,6 +35,11 @@ public screenshots without interacting with entry/application controls.
 
 ## Decisions
 
+- Phase 06 automatically traverses only HTTPS `cpn.tsite.jp/detail/...` pages;
+  third-party and hash-routed destinations are preserved but never opened.
+- Detail evidence combines labeled card/detail text and stores a SHA-256 hash;
+  no OCR is attempted for image-only terms.
+- Use a 1.5-second delay between sequential same-origin detail requests.
 - Use `https://cpn.tsite.jp/list/all` as the approved V Point public list source.
 - Parse its rendered card DOM and optionally enrich from embedded public
   `__NEXT_DATA__`; do not call hidden APIs.
@@ -65,6 +70,13 @@ None.
 
 ## Recent changes
 
+- Completed Phase 06 and its six UAT cases with 86 passing tests.
+- Approved live UAT persisted 51 cards, enriched 4 same-origin details, skipped
+  47 destinations, failed 0, and saved 4 public screenshots under `/tmp`.
+- Added conservative visible-text fact extraction, combined evidence hashes,
+  one-page delayed detail traversal, blocked-stop behavior, and screenshot paths.
+- Inspected a same-origin public detail page and expanded Phase 06 eligibility,
+  extraction, evidence, delay, screenshot, failure, and UAT contracts.
 - Completed Phase 05 and its six UAT cases with 77 passing tests.
 - Added deterministic current-date export filters, atomic UTF-8 JSON writing,
   read-only database validation, and CLI summary counts.
@@ -98,5 +110,4 @@ None.
 
 ## Next action
 
-Inspect approved public detail-page variants, expand Phase 06 planning/UAT, and
-implement safe enrichment and optional screenshots.
+Review and approve the target source before beginning Phase 07.

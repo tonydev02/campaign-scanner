@@ -11,9 +11,25 @@ from vpoint_scanner.db import (
     create_sqlite_engine,
 )
 from vpoint_scanner.schemas import Campaign
-from vpoint_scanner.sources import SourceError
+from vpoint_scanner.sources import CollectionResult, SourceError
 
 runner = CliRunner()
+
+
+def collection(
+    *campaigns: Campaign,
+    enriched: int = 0,
+    skipped: int = 0,
+    failed: int = 0,
+    screenshots: int = 0,
+) -> CollectionResult:
+    return CollectionResult(
+        campaigns=list(campaigns),
+        detail_enriched=enriched,
+        detail_skipped=skipped,
+        detail_failed=failed,
+        screenshots_saved=screenshots,
+    )
 
 
 def test_root_help_lists_commands() -> None:
@@ -76,7 +92,7 @@ def test_scrape_reports_collected_and_persisted_campaigns(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "vpoint_scanner.cli.collect_vpoint_public",
-        lambda **_: [campaign],
+        lambda **_: collection(campaign, skipped=1),
     )
     monkeypatch.setattr("vpoint_scanner.cli.create_sqlite_engine", lambda _: object())
     monkeypatch.setattr("vpoint_scanner.cli.initialize_database", lambda _: None)
@@ -89,6 +105,7 @@ def test_scrape_reports_collected_and_persisted_campaigns(monkeypatch) -> None:
 
     assert result.exit_code == 0
     assert "Collected 1 campaign cards" in result.stdout
+    assert "Details: 0 enriched, 1 skipped, 0 failed" in result.stdout
     assert "Persisted 1 inserted and 0 updated" in result.stdout
 
 
@@ -112,18 +129,19 @@ def test_scrape_reports_source_failure_without_traceback(monkeypatch) -> None:
     assert "Traceback" not in result.output
 
 
-def test_scrape_explains_screenshot_phase(monkeypatch) -> None:
-    monkeypatch.setattr(
-        "vpoint_scanner.cli.collect_vpoint_public",
-        lambda **_: [
-            Campaign(
-                source="https://cpn.tsite.jp/list/all",
-                source_type="vpoint_public",
-                title="テスト",
-                scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
-            )
-        ],
+def test_scrape_reports_saved_screenshots(monkeypatch) -> None:
+    campaign = Campaign(
+        source="https://cpn.tsite.jp/list/all",
+        source_type="vpoint_public",
+        title="テスト",
+        scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
     )
+
+    def collect(**kwargs):
+        assert kwargs["screenshots"] is True
+        return collection(campaign, enriched=1, screenshots=1)
+
+    monkeypatch.setattr("vpoint_scanner.cli.collect_vpoint_public", collect)
     monkeypatch.setattr("vpoint_scanner.cli.create_sqlite_engine", lambda _: object())
     monkeypatch.setattr("vpoint_scanner.cli.initialize_database", lambda _: None)
     monkeypatch.setattr(
@@ -134,7 +152,7 @@ def test_scrape_explains_screenshot_phase(monkeypatch) -> None:
     result = runner.invoke(app, ["scrape", "--screenshots"])
 
     assert result.exit_code == 0
-    assert "introduced in Phase 06" in result.output
+    assert "Screenshots: 1 saved" in result.output
 
 
 def test_scrape_persists_without_duplicates_across_runs(monkeypatch, tmp_path) -> None:
@@ -152,11 +170,13 @@ def test_scrape_persists_without_duplicates_across_runs(monkeypatch, tmp_path) -
             vpoint_public_url="https://cpn.tsite.jp/list/all",
             browser_timeout_ms=1000,
             database_path=database_path,
+            screenshots_dir=tmp_path / "screenshots",
+            detail_delay_seconds=1.5,
         ),
     )
     monkeypatch.setattr(
         "vpoint_scanner.cli.collect_vpoint_public",
-        lambda **_: [campaign],
+        lambda **_: collection(campaign, skipped=1),
     )
 
     first = runner.invoke(app, ["scrape"])
@@ -171,14 +191,15 @@ def test_scrape_persists_without_duplicates_across_runs(monkeypatch, tmp_path) -
 def test_scrape_reports_persistence_failure(monkeypatch) -> None:
     monkeypatch.setattr(
         "vpoint_scanner.cli.collect_vpoint_public",
-        lambda **_: [
+        lambda **_: collection(
             Campaign(
                 source="source",
                 source_type="vpoint_public",
                 title="テスト",
                 scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
-            )
-        ],
+            ),
+            skipped=1,
+        ),
     )
 
     def fail(_):

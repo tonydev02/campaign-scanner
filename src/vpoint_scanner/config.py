@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     vpoint_public_url: str = "https://cpn.tsite.jp/list/all"
     browser_timeout_ms: int = 30_000
+    detail_delay_seconds: float = Field(default=1.5, ge=1.0, le=3.0)
 
     extra_spending_allowed: Literal[0] = 0
     auto_entry_allowed: Literal[False] = False
