@@ -2,7 +2,7 @@
 
 ## Status
 
-`not_started`
+`done`
 
 Allowed status values:
 
@@ -29,11 +29,11 @@ one stable package layout, command surface, dependency set, and security policy.
 
 ## Goals
 
-- [ ] Create an installable Python 3.11+ package using a `src` layout.
-- [ ] Provide a working CLI with `scrape`, `export`, and `summary` placeholders.
-- [ ] Establish safe configuration, logging, data directories, and ignore rules.
-- [ ] Configure pytest and Ruff and add focused bootstrap tests.
-- [ ] Document local setup and the current non-functional command behavior.
+- [x] Create an installable Python 3.11+ package using a `src` layout.
+- [x] Provide a working CLI with `scrape`, `export`, and `summary` placeholders.
+- [x] Establish safe configuration, logging, data directories, and ignore rules.
+- [x] Configure pytest and Ruff and add focused bootstrap tests.
+- [x] Document local setup and the current non-functional command behavior.
 
 ## Non-goals
 
@@ -72,24 +72,24 @@ one stable package layout, command surface, dependency set, and security policy.
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| FR-001 | `python -m vpoint_scanner --help` displays CLI help without a traceback | Must | `not_started` |
-| FR-002 | CLI help lists `scrape`, `export`, and `summary` commands | Must | `not_started` |
-| FR-003 | Placeholder commands exit successfully and clearly state that their feature belongs to a later phase | Must | `not_started` |
-| FR-004 | `scrape` help accepts `--source` and `--screenshots` | Must | `not_started` |
-| FR-005 | `export` help accepts `--format`, `--output`, and `--ending-within-days` | Must | `not_started` |
-| FR-006 | Configuration exposes project data paths and the three safe policy defaults | Must | `not_started` |
-| FR-007 | Application logging can be initialized without duplicate handlers or import-time side effects | Should | `not_started` |
+| FR-001 | `python -m vpoint_scanner --help` displays CLI help without a traceback | Must | `done` |
+| FR-002 | CLI help lists `scrape`, `export`, and `summary` commands | Must | `done` |
+| FR-003 | Placeholder commands exit successfully and clearly state that their feature belongs to a later phase | Must | `done` |
+| FR-004 | `scrape` help accepts `--source` and `--screenshots` | Must | `done` |
+| FR-005 | `export` help accepts `--format`, `--output`, and `--ending-within-days` | Must | `done` |
+| FR-006 | Configuration exposes project data paths and the three safe policy defaults | Must | `done` |
+| FR-007 | Application logging can be initialized without duplicate handlers or import-time side effects | Should | `done` |
 
 ### Non-functional requirements
 
 | ID | Requirement | Priority | Status |
 |---|---|---:|---|
-| NFR-001 | Support Python 3.11 or newer and use UTF-8 throughout | Must | `not_started` |
-| NFR-002 | Runtime stack declares Typer, Pydantic, Playwright, and one SQLAlchemy-based ORM | Must | `not_started` |
-| NFR-003 | Development stack declares pytest and Ruff | Must | `not_started` |
-| NFR-004 | Ignore `.env`, SQLite files, private raw data/screenshots, browser profiles, cookies, and sessions | Must | `not_started` |
-| NFR-005 | Configuration defaults set extra spending to zero and disable automatic entry and new-card applications | Must | `not_started` |
-| NFR-006 | No command stores credentials or performs network/browser activity in this phase | Must | `not_started` |
+| NFR-001 | Support Python 3.11 or newer and use UTF-8 throughout | Must | `done` |
+| NFR-002 | Runtime stack declares Typer, Pydantic, Playwright, and one SQLAlchemy-based ORM | Must | `done` |
+| NFR-003 | Development stack declares pytest and Ruff | Must | `done` |
+| NFR-004 | Ignore `.env`, SQLite files, private raw data/screenshots, browser profiles, cookies, and sessions | Must | `done` |
+| NFR-005 | Configuration defaults set extra spending to zero and disable automatic entry and new-card applications | Must | `done` |
+| NFR-006 | No command stores credentials or performs network/browser activity in this phase | Must | `done` |
 
 ## Technical design
 
@@ -149,16 +149,16 @@ data/
 
 ## Implementation tasks
 
-- [ ] Add package metadata, dependencies, test settings, and Ruff settings.
-- [ ] Add package initialization and module entry point.
-- [ ] Implement the Typer command shell and placeholder command options.
-- [ ] Implement typed paths, safety policy defaults, and logging setup.
-- [ ] Add safe data directory placeholders and `.env.example`.
-- [ ] Add comprehensive ignore rules for generated and sensitive artifacts.
-- [ ] Write README setup, invocation, and safety-boundary documentation.
-- [ ] Add tests for imports, CLI behavior, configuration, and ignored paths.
-- [ ] Run Ruff checks and pytest.
-- [ ] Synchronize this plan, Phase UAT, and `.planning/STATE.md`.
+- [x] Add package metadata, dependencies, test settings, and Ruff settings.
+- [x] Add package initialization and module entry point.
+- [x] Implement the Typer command shell and placeholder command options.
+- [x] Implement typed paths, safety policy defaults, and logging setup.
+- [x] Add safe data directory placeholders and `.env.example`.
+- [x] Add comprehensive ignore rules for generated and sensitive artifacts.
+- [x] Write README setup, invocation, and safety-boundary documentation.
+- [x] Add tests for imports, CLI behavior, configuration, and ignored paths.
+- [x] Run Ruff checks and pytest.
+- [x] Synchronize this plan, Phase UAT, and `.planning/STATE.md`.
 
 ## Error handling
 

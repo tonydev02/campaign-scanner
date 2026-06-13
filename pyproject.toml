@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vpoint-campaign-scanner"
+version = "0.1.0"
+description = "Collect V Point campaign information for conservative local review."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "V Point Campaign Scanner contributors" }]
+dependencies = [
+  "playwright>=1.44,<2",
+  "pydantic>=2.7,<3",
+  "pydantic-settings>=2.2,<3",
+  "sqlalchemy>=2.0,<3",
+  "typer>=0.12,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2,<9",
+  "ruff>=0.4,<1",
+]
+
+[project.scripts]
+vpoint-scanner = "vpoint_scanner.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vpoint_scanner"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

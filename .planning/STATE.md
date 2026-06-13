@@ -2,28 +2,28 @@
 
 ## Current status
 
-- Active phase: `01-project-bootstrap`
+- Active phase: `02-campaign-schema-and-normalization`
 - Phase status: `not_started`
-- Overall status: `not_started`
+- Overall status: `in_progress`
 - Last updated: 2026-06-14
 
 ## Current repository state
 
-The repository currently contains `AGENTS.md`, the planning system, and phase
-templates. Application code, package metadata, tests, and runtime data
-directories have not been created yet.
+Phase 01 provides an installable Python 3.11+ package, a Typer CLI shell,
+Pydantic-backed safe configuration, idempotent logging, protected data
+directories, dependency locking, and bootstrap tests. Scraping, persistence,
+and campaign export behavior remain intentionally unimplemented.
 
 ## Active phase objective
 
-Establish a safe, testable Python 3.11+ project foundation with package
-metadata, a CLI shell, configuration defaults, logging, repository directories,
-and protections against committing credentials or private financial data.
+Define the campaign schema and normalization behavior required by later
+scraping, persistence, and export phases.
 
 ## Roadmap
 
 | Phase | Name | Status |
 |---:|---|---|
-| 01 | Project bootstrap | `not_started` |
+| 01 | Project bootstrap | `done` |
 | 02 | Campaign schema and normalization | `not_started` |
 | 03 | V Point public list scraping | `not_started` |
 | 04 | SQLite persistence and deduplication | `not_started` |
@@ -38,7 +38,8 @@ and protections against committing credentials or private financial data.
 
 - Use Python 3.11+ and a `src/vpoint_scanner` package layout.
 - Use Typer for the CLI, Pydantic for external schemas and configuration,
-  Playwright for browser automation, and SQLAlchemy or SQLModel for SQLite.
+  Playwright for browser automation, and SQLAlchemy for SQLite.
+- Use uv with a committed lockfile for reproducible local development.
 - Use pytest for tests and Ruff for linting and formatting.
 - Preserve Japanese source text as UTF-8 and retain raw evidence when parsing
   is incomplete.
@@ -60,12 +61,15 @@ None.
 
 ## Recent changes
 
+- Completed Phase 01 project bootstrap and all six UAT cases.
+- Added package metadata, a uv lockfile, CLI placeholders, safe configuration,
+  logging, data directory placeholders, security ignore rules, and README setup.
+- Added 14 bootstrap tests; pytest and Ruff checks pass on Python 3.12.1.
 - Created the ten-phase MVP roadmap.
 - Fully specified the Phase 01 implementation and UAT requirements.
 - Added provisional planning documents for Phases 02 through 10.
 
 ## Next action
 
-Implement and verify `01-project-bootstrap` according to its phase plan and UAT
-document. Before implementation starts, change the active phase status to
-`in_progress`.
+Review and begin `02-campaign-schema-and-normalization` according to its phase
+plan and UAT document.

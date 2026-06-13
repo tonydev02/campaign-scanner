@@ -2,7 +2,7 @@
 
 ## Status
 
-`not_started`
+`done`
 
 Allowed status values:
 
@@ -23,19 +23,19 @@ without triggering scraping, persistence, export, or private account access.
 
 | Item | Value |
 |---|---|
-| OS | macOS / Windows / Linux |
-| Python version | 3.11+ |
+| OS | macOS |
+| Python version | 3.12.1 |
 | Browser | Not used in this phase |
 | Database | Not created in this phase |
-| Test date | TODO |
-| Tester | TODO |
+| Test date | 2026-06-14 |
+| Tester | Codex |
 
 ## Preconditions
 
-- [ ] Python 3.11 or newer is installed.
-- [ ] Project and development dependencies are installed.
-- [ ] No real `.env`, credentials, cookies, or browser profile is needed.
-- [ ] The working tree contains no private financial data.
+- [x] Python 3.11 or newer is installed.
+- [x] Project and development dependencies are installed.
+- [x] No real `.env`, credentials, cookies, or browser profile is needed.
+- [x] The working tree contains no private financial data.
 
 ## Automated verification
 
@@ -70,11 +70,12 @@ python -m vpoint_scanner --help
 
 **Actual result**
 
-TODO
+Package import returned version `0.1.0`; root help loaded successfully and
+listed all three commands. No network or browser activity occurred.
 
 **Status**
 
-`not_started`
+`done`
 
 ### UAT-002: Future command options are discoverable
 
@@ -94,11 +95,12 @@ python -m vpoint_scanner summary --help
 
 **Actual result**
 
-TODO
+All subcommand help screens loaded. Scrape and export displayed every required
+future option, and summary required no arguments.
 
 **Status**
 
-`not_started`
+`done`
 
 ### UAT-003: Placeholder commands are honest and side-effect free
 
@@ -118,11 +120,12 @@ python -m vpoint_scanner summary
 
 **Actual result**
 
-TODO
+All placeholders exited with code 0 and explicitly reported that no campaigns
+were processed and no external action was taken. No database or export appeared.
 
 **Status**
 
-`not_started`
+`done`
 
 ### UAT-004: Conservative defaults
 
@@ -139,11 +142,12 @@ Inspect the documented configuration and run its automated tests.
 
 **Actual result**
 
-TODO
+Automated tests confirmed zero extra spending, disabled automatic entry,
+disabled new-card applications, and repository-local default data paths.
 
 **Status**
 
-`not_started`
+`done`
 
 ### UAT-005: Sensitive artifacts are protected
 
@@ -160,11 +164,12 @@ Review `.gitignore`, `.env.example`, and the security tests.
 
 **Actual result**
 
-TODO
+Ignore rules were checked with both automated tests and `git check-ignore`.
+The example environment file contains path examples only and no secrets.
 
 **Status**
 
-`not_started`
+`done`
 
 ### UAT-006: Documentation is sufficient
 
@@ -182,11 +187,12 @@ environment.
 
 **Actual result**
 
-TODO
+README setup and CLI commands were exercised with uv. It documents the Phase 01
+placeholder boundary and prohibited credential, spending, and entry behavior.
 
 **Status**
 
-`not_started`
+`done`
 
 ## Bug list
 
@@ -198,16 +204,18 @@ TODO
 
 ### Final result
 
-`not_started`
+`done`
 
 ### Summary
 
-TODO after testing.
+All 14 tests passed. Ruff lint and format checks passed. All six UAT cases
+passed with no known bugs and no scraping, browser, database, or export side
+effects.
 
 ## Sign-off checklist
 
-- [ ] All automated checks pass.
-- [ ] All must-have UAT cases pass.
-- [ ] Known issues are documented.
-- [ ] Phase plan tasks and statuses are updated.
-- [ ] `.planning/STATE.md` records results and the next phase.
+- [x] All automated checks pass.
+- [x] All must-have UAT cases pass.
+- [x] Known issues are documented.
+- [x] Phase plan tasks and statuses are updated.
+- [x] `.planning/STATE.md` records results and the next phase.
