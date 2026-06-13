@@ -2,21 +2,21 @@
 
 ## Current status
 
-- Active phase: `05-json-export-and-summary`
+- Active phase: `06-detail-page-extraction-and-screenshots`
 - Phase status: `not_started`
 - Overall status: `in_progress`
 - Last updated: 2026-06-14
 
 ## Current repository state
 
-Phases 01 through 04 provide the project foundation, canonical domain, gentle
-public collector, and atomic SQLite persistence with URL-first/fallback upsert.
-JSON export and database summary remain unimplemented.
+Phases 01 through 05 provide the project foundation, canonical domain, gentle
+public collector, atomic SQLite upsert, UTF-8 JSON export, and current-date
+database summary. Detail enrichment and screenshots remain unimplemented.
 
 ## Active phase objective
 
-Export stored campaigns as clean UTF-8 JSON and provide a concise database
-summary through the CLI.
+Enrich eligible public campaigns from detail pages and optionally preserve
+public screenshots without interacting with entry/application controls.
 
 ## Roadmap
 
@@ -26,7 +26,7 @@ summary through the CLI.
 | 02 | Campaign schema and normalization | `done` |
 | 03 | V Point public list scraping | `done` |
 | 04 | SQLite persistence and deduplication | `done` |
-| 05 | JSON export and summary | `not_started` |
+| 05 | JSON export and summary | `done` |
 | 06 | Detail page extraction and screenshots | `not_started` |
 | 07 | Additional public sources | `not_started` |
 | 08 | LLM fact extraction | `not_started` |
@@ -65,6 +65,11 @@ None.
 
 ## Recent changes
 
+- Completed Phase 05 and its six UAT cases with 77 passing tests.
+- Added deterministic current-date export filters, atomic UTF-8 JSON writing,
+  read-only database validation, and CLI summary counts.
+- Expanded Phase 05 current-date filters, JSON envelope, atomic write, summary,
+  CLI error, and UAT contracts and started implementation.
 - Completed Phase 04 and its six UAT cases with 70 passing tests.
 - Added full SQLAlchemy schema mapping, timezone-safe SQLite timestamps, atomic
   bulk upsert, URL/fallback identity upgrade, and scrape CLI persistence.
@@ -93,4 +98,5 @@ None.
 
 ## Next action
 
-Expand Phase 05 export and summary planning/UAT, then implement it.
+Inspect approved public detail-page variants, expand Phase 06 planning/UAT, and
+implement safe enrichment and optional screenshots.

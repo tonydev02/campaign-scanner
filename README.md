@@ -3,7 +3,7 @@
 V Point Campaign Scanner is a local tool for collecting campaign information
 and reviewing it without encouraging extra spending. It currently collects all
 visible cards from the public V Point campaign list and upserts them into local
-SQLite. JSON export is introduced in the next phase.
+SQLite. It exports clean UTF-8 JSON and reports current database counts.
 
 ## Requirements
 
@@ -11,8 +11,8 @@ SQLite. JSON export is introduced in the next phase.
 - [uv](https://docs.astral.sh/uv/) (recommended) or another Python package
   installer
 
-No browser installation, account login, credentials, or `.env` file is needed
-for Phase 01.
+No account login, credentials, or `.env` file is needed. Chromium is required
+only for the public scrape command.
 
 ## Setup
 
@@ -45,7 +45,8 @@ entry controls:
 python -m vpoint_scanner scrape --source vpoint_public
 ```
 
-The following command surfaces remain placeholders until their planned phases:
+Export all non-expired and unknown-date campaigns, export an inclusive ending
+window, or inspect current counts:
 
 ```bash
 python -m vpoint_scanner export --format json --output data/exports/campaigns.json

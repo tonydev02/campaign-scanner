@@ -42,19 +42,29 @@ def test_export_help_lists_future_options() -> None:
     assert "--ending-within-days" in result.stdout
 
 
-def test_later_phase_placeholder_commands_are_honest_and_successful(tmp_path) -> None:
-    commands = [
-        ["export", "--format", "json", "--output", str(tmp_path / "campaigns.json")],
-        ["summary"],
-    ]
+def test_export_and_summary_do_not_create_missing_database(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    database_path = tmp_path / "missing.sqlite3"
+    output_path = tmp_path / "campaigns.json"
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.get_settings",
+        lambda: SimpleNamespace(
+            database_path=database_path,
+            exports_dir=tmp_path / "exports",
+        ),
+    )
 
-    for command in commands:
-        result = runner.invoke(app, command)
-        assert result.exit_code == 0
-        assert "not implemented yet" in result.stdout
-        assert "No campaigns were processed" in result.stdout
+    export_result = runner.invoke(app, ["export", "--output", str(output_path)])
+    summary_result = runner.invoke(app, ["summary"])
 
-    assert list(tmp_path.iterdir()) == []
+    assert export_result.exit_code == 1
+    assert "Database does not exist" in export_result.output
+    assert summary_result.exit_code == 1
+    assert "Database does not exist" in summary_result.output
+    assert not database_path.exists()
+    assert not output_path.exists()
 
 
 def test_scrape_reports_collected_and_persisted_campaigns(monkeypatch) -> None:

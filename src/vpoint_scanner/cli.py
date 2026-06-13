@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
@@ -9,18 +10,17 @@ from vpoint_scanner.db import (
     PersistenceError,
     create_sqlite_engine,
     initialize_database,
+    list_campaigns,
+    open_existing_database,
     persist_campaigns,
+    summarize_campaigns,
 )
+from vpoint_scanner.export import ExportError, write_campaign_export
 from vpoint_scanner.sources import SourceError, collect_vpoint_public
 
 app = typer.Typer(
     help="Collect V Point campaign information for conservative local review.",
     no_args_is_help=True,
-)
-
-PLACEHOLDER = (
-    "{feature} is not implemented yet. "
-    "No campaigns were processed and no external action was taken."
 )
 
 
@@ -102,14 +102,50 @@ def export_campaigns(
         ),
     ] = None,
 ) -> None:
-    """Expose the future campaign export interface."""
+    """Export stored campaigns as UTF-8 JSON."""
 
-    del output_format, output, ending_within_days
-    typer.echo(PLACEHOLDER.format(feature="Export"))
+    del output_format
+    settings = get_settings()
+    if settings.database_path is None or settings.exports_dir is None:
+        typer.echo(
+            "Export failed: database or export path is not configured.", err=True
+        )
+        raise typer.Exit(code=1)
+    output_path = output or settings.exports_dir / "campaigns.json"
+    now = datetime.now().astimezone()
+    try:
+        engine = open_existing_database(settings.database_path)
+        campaigns = list_campaigns(engine)
+        envelope = write_campaign_export(
+            campaigns,
+            output_path=output_path,
+            today=now.date(),
+            exported_at=now,
+            ending_within_days=ending_within_days,
+        )
+    except (PersistenceError, ExportError) as exc:
+        typer.echo(f"Export failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Exported {envelope['campaign_count']} campaigns to {output_path}")
 
 
 @app.command()
 def summary() -> None:
-    """Expose the future database summary interface."""
+    """Show current campaign counts from the local database."""
 
-    typer.echo(PLACEHOLDER.format(feature="Summary"))
+    settings = get_settings()
+    if settings.database_path is None:
+        typer.echo("Summary failed: database path is not configured.", err=True)
+        raise typer.Exit(code=1)
+    try:
+        engine = open_existing_database(settings.database_path)
+        result = summarize_campaigns(engine, today=datetime.now().astimezone().date())
+    except PersistenceError as exc:
+        typer.echo(f"Summary failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"Campaigns: {result.total}")
+    typer.echo(f"Sources: {result.source_count}")
+    typer.echo(f"Active: {result.active}")
+    typer.echo(f"Ending soon: {result.ending_soon}")
+    typer.echo(f"Expired: {result.expired}")
+    typer.echo(f"Unknown: {result.unknown}")

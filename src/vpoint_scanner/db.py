@@ -1,13 +1,18 @@
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
-from sqlalchemy import Engine, create_engine, func, select
+from sqlalchemy import Engine, create_engine, func, inspect, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from vpoint_scanner.models import Base, CampaignRecord
-from vpoint_scanner.normalize import campaign_identity, canonicalize_url
-from vpoint_scanner.schemas import Campaign
+from vpoint_scanner.normalize import (
+    calculate_status,
+    campaign_identity,
+    canonicalize_url,
+)
+from vpoint_scanner.schemas import Campaign, CampaignStatus
 
 
 class PersistenceError(RuntimeError):
@@ -18,6 +23,16 @@ class PersistenceError(RuntimeError):
 class UpsertResult:
     inserted: int
     updated: int
+
+
+@dataclass(frozen=True)
+class DatabaseSummary:
+    total: int
+    source_count: int
+    active: int
+    ending_soon: int
+    expired: int
+    unknown: int
 
 
 _MERGE_FIELDS = (
@@ -66,6 +81,22 @@ def initialize_database(engine: Engine) -> None:
         raise PersistenceError(f"Could not initialize SQLite database: {exc}") from exc
 
 
+def open_existing_database(database_path: Path) -> Engine:
+    """Open a populated scanner database without creating a missing file."""
+
+    if not database_path.is_file():
+        raise PersistenceError(f"Database does not exist: {database_path}")
+    engine = create_engine(f"sqlite:///{database_path}", future=True)
+    try:
+        if not inspect(engine).has_table(CampaignRecord.__tablename__):
+            raise PersistenceError(
+                f"Database is not initialized for campaign storage: {database_path}"
+            )
+    except SQLAlchemyError as exc:
+        raise PersistenceError(f"Could not inspect database: {exc}") from exc
+    return engine
+
+
 def persist_campaigns(engine: Engine, campaigns: list[Campaign]) -> UpsertResult:
     """Atomically insert or update a batch of campaign observations."""
 
@@ -93,6 +124,22 @@ def list_campaigns(engine: Engine) -> list[Campaign]:
             select(CampaignRecord).order_by(CampaignRecord.id)
         ).all()
         return [_to_campaign(record) for record in records]
+
+
+def summarize_campaigns(engine: Engine, *, today: date) -> DatabaseSummary:
+    campaigns = list_campaigns(engine)
+    counts = {status: 0 for status in CampaignStatus}
+    for campaign in campaigns:
+        status = calculate_status(campaign.end_date, today=today)
+        counts[status] += 1
+    return DatabaseSummary(
+        total=len(campaigns),
+        source_count=len({campaign.source for campaign in campaigns}),
+        active=counts[CampaignStatus.ACTIVE],
+        ending_soon=counts[CampaignStatus.ENDING_SOON],
+        expired=counts[CampaignStatus.EXPIRED],
+        unknown=counts[CampaignStatus.UNKNOWN],
+    )
 
 
 def _upsert_campaign(session: Session, campaign: Campaign) -> bool:
