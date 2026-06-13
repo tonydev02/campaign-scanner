@@ -2,8 +2,8 @@
 
 V Point Campaign Scanner is a local tool for collecting campaign information
 and reviewing it without encouraging extra spending. It currently collects all
-visible cards from the public V Point campaign list. Database storage and JSON
-export are introduced in later phases.
+visible cards from the public V Point campaign list and upserts them into local
+SQLite. JSON export is introduced in the next phase.
 
 ## Requirements
 
@@ -37,8 +37,9 @@ python -m vpoint_scanner --help
 ## CLI
 
 The `scrape` command opens the approved public all-campaigns page once with
-Playwright and prints the collected card count and titles. It does not visit
-campaign details, click entry controls, or write a database:
+Playwright and upserts the collected cards into
+`data/vpoint_campaigns.sqlite3`. It does not visit campaign details or click
+entry controls:
 
 ```bash
 python -m vpoint_scanner scrape --source vpoint_public

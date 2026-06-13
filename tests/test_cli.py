@@ -1,8 +1,15 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 from typer.testing import CliRunner
 
 from vpoint_scanner.cli import app
+from vpoint_scanner.db import (
+    PersistenceError,
+    UpsertResult,
+    campaign_count,
+    create_sqlite_engine,
+)
 from vpoint_scanner.schemas import Campaign
 from vpoint_scanner.sources import SourceError
 
@@ -44,13 +51,13 @@ def test_later_phase_placeholder_commands_are_honest_and_successful(tmp_path) ->
     for command in commands:
         result = runner.invoke(app, command)
         assert result.exit_code == 0
-        assert "not implemented in Phase 01" in result.stdout
+        assert "not implemented yet" in result.stdout
         assert "No campaigns were processed" in result.stdout
 
     assert list(tmp_path.iterdir()) == []
 
 
-def test_scrape_reports_collected_campaigns(monkeypatch) -> None:
+def test_scrape_reports_collected_and_persisted_campaigns(monkeypatch) -> None:
     campaign = Campaign(
         source="https://cpn.tsite.jp/list/all",
         source_type="vpoint_public",
@@ -61,12 +68,18 @@ def test_scrape_reports_collected_campaigns(monkeypatch) -> None:
         "vpoint_scanner.cli.collect_vpoint_public",
         lambda **_: [campaign],
     )
+    monkeypatch.setattr("vpoint_scanner.cli.create_sqlite_engine", lambda _: object())
+    monkeypatch.setattr("vpoint_scanner.cli.initialize_database", lambda _: None)
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.persist_campaigns",
+        lambda *_: UpsertResult(inserted=1, updated=0),
+    )
 
     result = runner.invoke(app, ["scrape", "--source", "vpoint_public"])
 
     assert result.exit_code == 0
     assert "Collected 1 campaign cards" in result.stdout
-    assert "テストキャンペーン" in result.stdout
+    assert "Persisted 1 inserted and 0 updated" in result.stdout
 
 
 def test_scrape_rejects_unsupported_source() -> None:
@@ -101,11 +114,72 @@ def test_scrape_explains_screenshot_phase(monkeypatch) -> None:
             )
         ],
     )
+    monkeypatch.setattr("vpoint_scanner.cli.create_sqlite_engine", lambda _: object())
+    monkeypatch.setattr("vpoint_scanner.cli.initialize_database", lambda _: None)
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.persist_campaigns",
+        lambda *_: UpsertResult(inserted=1, updated=0),
+    )
 
     result = runner.invoke(app, ["scrape", "--screenshots"])
 
     assert result.exit_code == 0
     assert "introduced in Phase 06" in result.output
+
+
+def test_scrape_persists_without_duplicates_across_runs(monkeypatch, tmp_path) -> None:
+    database_path = tmp_path / "campaigns.sqlite3"
+    campaign = Campaign(
+        source="https://cpn.tsite.jp/list/all",
+        source_type="vpoint_public",
+        title="保存テスト",
+        campaign_url="https://example.jp/campaign/1",
+        scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
+    )
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.get_settings",
+        lambda: SimpleNamespace(
+            vpoint_public_url="https://cpn.tsite.jp/list/all",
+            browser_timeout_ms=1000,
+            database_path=database_path,
+        ),
+    )
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.collect_vpoint_public",
+        lambda **_: [campaign],
+    )
+
+    first = runner.invoke(app, ["scrape"])
+    second = runner.invoke(app, ["scrape"])
+
+    assert first.exit_code == second.exit_code == 0
+    assert "1 inserted and 0 updated" in first.stdout
+    assert "0 inserted and 1 updated" in second.stdout
+    assert campaign_count(create_sqlite_engine(database_path)) == 1
+
+
+def test_scrape_reports_persistence_failure(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "vpoint_scanner.cli.collect_vpoint_public",
+        lambda **_: [
+            Campaign(
+                source="source",
+                source_type="vpoint_public",
+                title="テスト",
+                scraped_at=datetime(2026, 6, 14, tzinfo=UTC),
+            )
+        ],
+    )
+
+    def fail(_):
+        raise PersistenceError("disk unavailable")
+
+    monkeypatch.setattr("vpoint_scanner.cli.create_sqlite_engine", fail)
+
+    result = runner.invoke(app, ["scrape"])
+
+    assert result.exit_code == 1
+    assert "Scrape failed: disk unavailable" in result.output
 
 
 def test_negative_ending_window_is_rejected() -> None:

@@ -2,22 +2,21 @@
 
 ## Current status
 
-- Active phase: `04-sqlite-persistence-and-deduplication`
+- Active phase: `05-json-export-and-summary`
 - Phase status: `not_started`
 - Overall status: `in_progress`
 - Last updated: 2026-06-14
 
 ## Current repository state
 
-Phases 01 through 03 provide the project foundation, canonical campaign domain,
-fixture-backed card parser, and a gentle one-page Playwright collector for the
-approved public V Point all-campaigns list. Persistence and campaign export
-remain unimplemented.
+Phases 01 through 04 provide the project foundation, canonical domain, gentle
+public collector, and atomic SQLite persistence with URL-first/fallback upsert.
+JSON export and database summary remain unimplemented.
 
 ## Active phase objective
 
-Persist normalized campaigns in local SQLite with deterministic URL-first and
-title-period fallback upserts.
+Export stored campaigns as clean UTF-8 JSON and provide a concise database
+summary through the CLI.
 
 ## Roadmap
 
@@ -26,7 +25,7 @@ title-period fallback upserts.
 | 01 | Project bootstrap | `done` |
 | 02 | Campaign schema and normalization | `done` |
 | 03 | V Point public list scraping | `done` |
-| 04 | SQLite persistence and deduplication | `not_started` |
+| 04 | SQLite persistence and deduplication | `done` |
 | 05 | JSON export and summary | `not_started` |
 | 06 | Detail page extraction and screenshots | `not_started` |
 | 07 | Additional public sources | `not_started` |
@@ -66,6 +65,11 @@ None.
 
 ## Recent changes
 
+- Completed Phase 04 and its six UAT cases with 70 passing tests.
+- Added full SQLAlchemy schema mapping, timezone-safe SQLite timestamps, atomic
+  bulk upsert, URL/fallback identity upgrade, and scrape CLI persistence.
+- Expanded Phase 04 schema mapping, identity upgrade, transaction, CLI, and UAT
+  contracts and started implementation.
 - Completed Phase 03 and its six UAT cases with 62 passing tests.
 - Approved live UAT collected 51 cards from `https://cpn.tsite.jp/list/all`
   using one Playwright page and created no database or export.
@@ -89,4 +93,4 @@ None.
 
 ## Next action
 
-Expand Phase 04 persistence and deduplication planning/UAT, then implement it.
+Expand Phase 05 export and summary planning/UAT, then implement it.
