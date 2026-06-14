@@ -15,7 +15,7 @@ from vpoint_scanner.db import (
     persist_campaigns,
     summarize_campaigns,
 )
-from vpoint_scanner.export import ExportError, write_campaign_export
+from vpoint_scanner.export import ExportError, ExportProfile, write_campaign_export
 from vpoint_scanner.sources import SourceError, collect_vpoint_public
 
 app = typer.Typer(
@@ -108,6 +108,10 @@ def export_campaigns(
             help="Include campaigns ending within this many days.",
         ),
     ] = None,
+    profile: Annotated[
+        ExportProfile,
+        typer.Option(help="Use compact daily-review or full evidence output."),
+    ] = ExportProfile.COMPACT,
 ) -> None:
     """Export stored campaigns as UTF-8 JSON."""
 
@@ -118,7 +122,7 @@ def export_campaigns(
             "Export failed: database or export path is not configured.", err=True
         )
         raise typer.Exit(code=1)
-    output_path = output or settings.exports_dir / "campaigns.json"
+    output_path = output or settings.exports_dir / f"campaigns_{profile.value}.json"
     now = datetime.now().astimezone()
     try:
         engine = open_existing_database(settings.database_path)
@@ -129,6 +133,7 @@ def export_campaigns(
             today=now.date(),
             exported_at=now,
             ending_within_days=ending_within_days,
+            profile=profile,
         )
     except (PersistenceError, ExportError) as exc:
         typer.echo(f"Export failed: {exc}", err=True)

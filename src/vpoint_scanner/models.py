@@ -67,6 +67,15 @@ class CampaignRecord(Base):
     target_store_text: Mapped[str | None] = mapped_column(Text)
     minimum_spend_text: Mapped[str | None] = mapped_column(Text)
     exclusions_text: Mapped[str | None] = mapped_column(Text)
+    detail_scrape_status: Mapped[str] = mapped_column(
+        String(32),
+        default="not_attempted",
+    )
+    requires_new_application: Mapped[bool | None] = mapped_column(Boolean)
+    is_lottery: Mapped[bool | None] = mapped_column(Boolean)
+    is_guaranteed: Mapped[bool | None] = mapped_column(Boolean)
+    is_financial_product: Mapped[bool | None] = mapped_column(Boolean)
+    is_gambling_or_prediction: Mapped[bool | None] = mapped_column(Boolean)
     raw_text: Mapped[str | None] = mapped_column(Text)
     raw_html_hash: Mapped[str | None] = mapped_column(String(128))
     screenshot_path: Mapped[str | None] = mapped_column(Text)

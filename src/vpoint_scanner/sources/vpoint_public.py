@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page, sync_playwright
 
+from vpoint_scanner.extract import inferred_detail_scrape_status
 from vpoint_scanner.parsers.campaign_card import (
     CARD_SELECTOR,
     CampaignCardParseError,
@@ -21,7 +22,7 @@ from vpoint_scanner.parsers.campaign_detail import (
     CampaignDetailParseError,
     enrich_campaign_from_detail,
 )
-from vpoint_scanner.schemas import Campaign
+from vpoint_scanner.schemas import Campaign, DetailScrapeStatus
 from vpoint_scanner.sources.base import SourceError
 
 DETAIL_SELECTOR = ".contents, .info"
@@ -122,7 +123,12 @@ def enrich_campaign_details(
 ) -> CollectionResult:
     """Visit eligible details one at a time without interacting with controls."""
 
-    enriched_campaigns = list(campaigns)
+    enriched_campaigns = [
+        campaign.model_copy(
+            update={"detail_scrape_status": inferred_detail_scrape_status(campaign)}
+        )
+        for campaign in campaigns
+    ]
     detail_enriched = 0
     detail_failed = 0
     screenshots_saved = 0
@@ -149,10 +155,22 @@ def enrich_campaign_details(
                 is_eligible_detail_url(item.campaign_url) for item in campaigns[index:]
             )
             detail_failed += remaining
+            for remaining_index in range(index, len(campaigns)):
+                if is_eligible_detail_url(campaigns[remaining_index].campaign_url):
+                    enriched_campaigns[remaining_index] = enriched_campaigns[
+                        remaining_index
+                    ].model_copy(
+                        update={
+                            "detail_scrape_status": DetailScrapeStatus.FAILED,
+                        }
+                    )
             logger.warning("%s Further detail traversal stopped.", exc)
             break
         except (SourceError, CampaignDetailParseError, PlaywrightError) as exc:
             detail_failed += 1
+            enriched_campaigns[index] = enriched_campaigns[index].model_copy(
+                update={"detail_scrape_status": DetailScrapeStatus.FAILED}
+            )
             logger.warning("Detail enrichment failed for %s: %s", campaign.title, exc)
             continue
 

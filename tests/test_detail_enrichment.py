@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from vpoint_scanner.schemas import Campaign
+from vpoint_scanner.schemas import Campaign, DetailScrapeStatus
 from vpoint_scanner.sources.vpoint_public import (
     enrich_campaign_details,
     is_eligible_detail_url,
@@ -103,6 +103,13 @@ def test_enrichment_visits_only_eligible_urls_with_delay_and_no_clicks() -> None
     assert not {"click", "fill", "submit"} & {action[0] for action in page.actions}
     assert result.campaigns[1].raw_text == "external card"
     assert result.campaigns[0].raw_html_hash is not None
+    assert result.campaigns[0].detail_scrape_status is DetailScrapeStatus.EXTRACTED
+    assert (
+        result.campaigns[1].detail_scrape_status is DetailScrapeStatus.EXTERNAL_SKIPPED
+    )
+    assert (
+        result.campaigns[2].detail_scrape_status is DetailScrapeStatus.EXTERNAL_SKIPPED
+    )
 
 
 def test_normal_failure_continues_and_block_stops_remaining_details() -> None:
@@ -142,6 +149,29 @@ def test_normal_failure_continues_and_block_stops_remaining_details() -> None:
         "failed card",
         "blocked card",
         "unvisited card",
+    ]
+    assert all(
+        item.detail_scrape_status is DetailScrapeStatus.FAILED
+        for item in result.campaigns
+    )
+
+
+def test_missing_and_same_origin_unsupported_urls_are_explained() -> None:
+    result = enrich_campaign_details(
+        FakePage({}),
+        [
+            make_campaign("missing", None),
+            make_campaign("list", "https://cpn.tsite.jp/list/all"),
+        ],
+        timeout_ms=1000,
+        screenshots=False,
+        screenshots_dir=None,
+        delay_seconds=1.0,
+    )
+
+    assert [item.detail_scrape_status for item in result.campaigns] == [
+        DetailScrapeStatus.UNSUPPORTED,
+        DetailScrapeStatus.UNSUPPORTED,
     ]
 
 

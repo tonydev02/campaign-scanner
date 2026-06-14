@@ -47,14 +47,19 @@ python -m vpoint_scanner scrape --source vpoint_public
 python -m vpoint_scanner scrape --screenshots
 ```
 
-Export all non-expired and unknown-date campaigns, export an inclusive ending
-window, or inspect current counts:
+Export a compact daily-review file, retain full evidence for deep review, use an
+inclusive ending window, or inspect current counts:
 
 ```bash
-python -m vpoint_scanner export --format json --output data/exports/campaigns.json
+python -m vpoint_scanner export
+python -m vpoint_scanner export --profile full
+python -m vpoint_scanner export --profile compact --output data/exports/review.json
 python -m vpoint_scanner export --ending-within-days 7
 python -m vpoint_scanner summary
 ```
+
+Compact output omits null fields and includes at most 800 characters of raw
+evidence per campaign. Full output preserves the complete canonical record.
 
 Screenshots are optional and limited to enriched public detail pages under
 `data/screenshots/public/`. They may contain campaign marketing content but must

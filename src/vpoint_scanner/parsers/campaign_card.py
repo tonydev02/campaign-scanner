@@ -6,6 +6,7 @@ from urllib.parse import urljoin, urlsplit
 
 from selectolax.parser import HTMLParser, Node
 
+from vpoint_scanner.extract import enrich_campaign_from_visible_text
 from vpoint_scanner.normalize import (
     calculate_status,
     normalize_text,
@@ -82,7 +83,7 @@ def _parse_card(
 
     requires_entry = True if str(campaign_metadata.get("entry_type")) == "1" else None
     raw_text = normalize_text(card.text(separator=" ", strip=True))
-    return Campaign(
+    campaign = Campaign(
         source=source_url,
         source_type=SourceType.VPOINT_PUBLIC,
         title=title,
@@ -98,6 +99,7 @@ def _parse_card(
         scraped_at=scraped_at,
         status=calculate_status(end_date, today=scraped_at.date()),
     )
+    return enrich_campaign_from_visible_text(campaign)
 
 
 def _parse_next_metadata(tree: HTMLParser) -> dict[str, dict[str, Any]]:

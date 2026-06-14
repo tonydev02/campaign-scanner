@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from selectolax.parser import HTMLParser
 
 from vpoint_scanner.normalize import normalize_text
-from vpoint_scanner.schemas import Campaign, RewardType
+from vpoint_scanner.schemas import Campaign, DetailScrapeStatus, RewardType
 
 _MAX_POINTS = re.compile(r"最大\s*([\d,]+)\s*(?:ポイント|pt)", re.IGNORECASE)
 _MONEY = re.compile(r"[\d,]+\s*円")
@@ -93,6 +93,7 @@ def enrich_campaign_from_detail(
             "target_store_text": target_store_text or campaign.target_store_text,
             "minimum_spend_text": (minimum_spend_text or campaign.minimum_spend_text),
             "exclusions_text": exclusions_text or campaign.exclusions_text,
+            "detail_scrape_status": DetailScrapeStatus.EXTRACTED,
             "raw_text": combined_text,
             "raw_html_hash": hashlib.sha256(html.encode("utf-8")).hexdigest(),
             "screenshot_path": screenshot_path or campaign.screenshot_path,

@@ -2,10 +2,14 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from sqlalchemy import Engine, create_engine, func, inspect, select
+from sqlalchemy import Engine, create_engine, func, inspect, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from vpoint_scanner.extract import (
+    enrich_campaign_from_visible_text,
+    inferred_detail_scrape_status,
+)
 from vpoint_scanner.models import Base, CampaignRecord
 from vpoint_scanner.normalize import (
     calculate_status,
@@ -55,6 +59,12 @@ _MERGE_FIELDS = (
     "target_store_text",
     "minimum_spend_text",
     "exclusions_text",
+    "detail_scrape_status",
+    "requires_new_application",
+    "is_lottery",
+    "is_guaranteed",
+    "is_financial_product",
+    "is_gambling_or_prediction",
     "raw_text",
     "raw_html_hash",
     "screenshot_path",
@@ -77,12 +87,13 @@ def create_sqlite_engine(database_path: Path) -> Engine:
 def initialize_database(engine: Engine) -> None:
     try:
         Base.metadata.create_all(engine)
+        _migrate_campaign_columns(engine)
     except SQLAlchemyError as exc:
         raise PersistenceError(f"Could not initialize SQLite database: {exc}") from exc
 
 
 def open_existing_database(database_path: Path) -> Engine:
-    """Open a populated scanner database without creating a missing file."""
+    """Open and migrate a populated scanner database without creating a file."""
 
     if not database_path.is_file():
         raise PersistenceError(f"Database does not exist: {database_path}")
@@ -92,6 +103,7 @@ def open_existing_database(database_path: Path) -> Engine:
             raise PersistenceError(
                 f"Database is not initialized for campaign storage: {database_path}"
             )
+        _migrate_campaign_columns(engine)
     except SQLAlchemyError as exc:
         raise PersistenceError(f"Could not inspect database: {exc}") from exc
     return engine
@@ -221,13 +233,18 @@ def _merge_campaign_fields(record: CampaignRecord, campaign: Campaign) -> None:
         value = getattr(campaign, field)
         if value is None:
             continue
-        if field in {"source_type", "reward_type", "status"}:
+        if field in {
+            "source_type",
+            "reward_type",
+            "status",
+            "detail_scrape_status",
+        }:
             value = value.value
         setattr(record, field, value)
 
 
 def _to_campaign(record: CampaignRecord) -> Campaign:
-    return Campaign(
+    campaign = Campaign(
         id=record.id,
         source=record.source,
         source_type=record.source_type,
@@ -248,6 +265,12 @@ def _to_campaign(record: CampaignRecord) -> Campaign:
         target_store_text=record.target_store_text,
         minimum_spend_text=record.minimum_spend_text,
         exclusions_text=record.exclusions_text,
+        detail_scrape_status=record.detail_scrape_status,
+        requires_new_application=record.requires_new_application,
+        is_lottery=record.is_lottery,
+        is_guaranteed=record.is_guaranteed,
+        is_financial_product=record.is_financial_product,
+        is_gambling_or_prediction=record.is_gambling_or_prediction,
         raw_text=record.raw_text,
         raw_html_hash=record.raw_html_hash,
         screenshot_path=record.screenshot_path,
@@ -256,3 +279,28 @@ def _to_campaign(record: CampaignRecord) -> Campaign:
         scraped_at=record.scraped_at,
         status=record.status,
     )
+    if campaign.detail_scrape_status.value == "not_attempted":
+        campaign = campaign.model_copy(
+            update={
+                "detail_scrape_status": inferred_detail_scrape_status(campaign),
+            }
+        )
+    return enrich_campaign_from_visible_text(campaign)
+
+
+def _migrate_campaign_columns(engine: Engine) -> None:
+    existing = {column["name"] for column in inspect(engine).get_columns("campaigns")}
+    additions = {
+        "detail_scrape_status": ("VARCHAR(32) NOT NULL DEFAULT 'not_attempted'"),
+        "requires_new_application": "BOOLEAN",
+        "is_lottery": "BOOLEAN",
+        "is_guaranteed": "BOOLEAN",
+        "is_financial_product": "BOOLEAN",
+        "is_gambling_or_prediction": "BOOLEAN",
+    }
+    with engine.begin() as connection:
+        for name, definition in additions.items():
+            if name not in existing:
+                connection.execute(
+                    text(f"ALTER TABLE campaigns ADD COLUMN {name} {definition}")
+                )

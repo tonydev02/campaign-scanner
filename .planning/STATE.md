@@ -2,8 +2,8 @@
 
 ## Current status
 
-- Active phase: `07-additional-public-sources`
-- Phase status: `not_started`
+- Active phase: `07-review-ready-exports`
+- Phase status: `done`
 - Overall status: `in_progress`
 - Last updated: 2026-06-14
 
@@ -15,8 +15,8 @@ screenshots, atomic SQLite upsert, UTF-8 JSON export, and current-date summary.
 
 ## Active phase objective
 
-Add a separately approved public campaign source without weakening the existing
-safety, evidence, and deduplication behavior.
+Make JSON exports concise and explainable for LLM review while preserving full
+campaign evidence and conservative scanner behavior.
 
 ## Roadmap
 
@@ -28,13 +28,21 @@ safety, evidence, and deduplication behavior.
 | 04 | SQLite persistence and deduplication | `done` |
 | 05 | JSON export and summary | `done` |
 | 06 | Detail page extraction and screenshots | `done` |
-| 07 | Additional public sources | `not_started` |
+| 07 | Review-ready exports | `done` |
+| 07A | Additional public sources | `not_started` |
 | 08 | LLM fact extraction | `not_started` |
 | 09 | Conservative campaign labeling | `not_started` |
 | 10 | Private Vpass reading | `not_started` |
 
 ## Decisions
 
+- Reprioritize Phase 07 from additional sources to review-ready export quality;
+  additional public sources move to a later separately approved phase.
+- Provide explicit compact and full JSON profiles; compact output omits nulls
+  and bounds raw evidence while full output preserves canonical evidence.
+- Apply additive campaign-column migrations when opening an existing database
+  so export and summary work immediately after an upgrade.
+- Keep detail-section map persistence outside Phase 07.
 - Phase 06 automatically traverses only HTTPS `cpn.tsite.jp/detail/...` pages;
   third-party and hash-routed destinations are preserved but never opened.
 - Detail evidence combines labeled card/detail text and stores a SHA-256 hash;
@@ -70,6 +78,13 @@ None.
 
 ## Recent changes
 
+- Completed Phase 07 and its six UAT scenarios with 98 passing tests.
+- Added compact/full export profiles, bounded evidence previews, detail outcome
+  metadata, conservative visible-text facts, and additive SQLite migrations.
+- Verified both profiles against the existing 51-campaign database; compact
+  output was 63,289 bytes versus 107,772 bytes for full output.
+- Re-scoped Phase 07 around detail outcome tracking, conservative title facts,
+  and compact/full JSON exports based on review of the successful MVP output.
 - Completed Phase 06 and its six UAT cases with 86 passing tests.
 - Approved live UAT persisted 51 cards, enriched 4 same-origin details, skipped
   47 destinations, failed 0, and saved 4 public screenshots under `/tmp`.
@@ -110,4 +125,5 @@ None.
 
 ## Next action
 
-Review and approve the target source before beginning Phase 07.
+Choose whether to add another approved public source or proceed to optional LLM
+fact extraction.

@@ -27,6 +27,14 @@ class CampaignStatus(StrEnum):
     UNKNOWN = "unknown"
 
 
+class DetailScrapeStatus(StrEnum):
+    NOT_ATTEMPTED = "not_attempted"
+    EXTERNAL_SKIPPED = "external_skipped"
+    EXTRACTED = "extracted"
+    FAILED = "failed"
+    UNSUPPORTED = "unsupported"
+
+
 class Campaign(BaseModel):
     """Canonical campaign data preserved from source evidence."""
 
@@ -52,6 +60,12 @@ class Campaign(BaseModel):
     target_store_text: str | None = None
     minimum_spend_text: str | None = None
     exclusions_text: str | None = None
+    detail_scrape_status: DetailScrapeStatus = DetailScrapeStatus.NOT_ATTEMPTED
+    requires_new_application: bool | None = None
+    is_lottery: bool | None = None
+    is_guaranteed: bool | None = None
+    is_financial_product: bool | None = None
+    is_gambling_or_prediction: bool | None = None
     raw_text: str | None = None
     raw_html_hash: str | None = None
     screenshot_path: str | None = None

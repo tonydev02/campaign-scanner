@@ -13,7 +13,7 @@ from vpoint_scanner.db import (
     persist_campaigns,
     summarize_campaigns,
 )
-from vpoint_scanner.export import ExportError, write_campaign_export
+from vpoint_scanner.export import ExportError, ExportProfile, write_campaign_export
 from vpoint_scanner.schemas import Campaign, CampaignStatus
 
 TODAY = date(2026, 6, 14)
@@ -69,10 +69,54 @@ def test_default_export_shape_utf8_and_order(tmp_path: Path) -> None:
         "通常",
         "期限不明",
     ]
-    assert parsed["campaigns"][-1]["end_date"] is None
+    assert "end_date" not in parsed["campaigns"][-1]
     assert parsed["campaigns"][-1]["status"] == "unknown"
+    assert parsed["profile"] == "compact"
+    assert parsed["campaigns"][-1]["raw_text_preview"] == "日本語の証拠"
+    assert parsed["campaigns"][-1]["raw_text_length"] == 6
+    assert parsed["campaigns"][-1]["has_detail_text"] is False
     assert "日本語の証拠" in text
     assert "\\u65e5" not in text
+
+
+def test_full_export_preserves_nulls_and_complete_raw_text(tmp_path: Path) -> None:
+    item = campaign(title="完全版", end_date=None)
+    item.raw_text = "証拠" * 1000
+
+    envelope = write_campaign_export(
+        [item],
+        output_path=tmp_path / "campaigns_full.json",
+        today=TODAY,
+        exported_at=EXPORTED_AT,
+        profile=ExportProfile.FULL,
+    )
+    exported = envelope["campaigns"][0]
+
+    assert envelope["profile"] == "full"
+    assert exported["end_date"] is None
+    assert exported["raw_text"] == "証拠" * 1000
+    assert "raw_text_preview" not in exported
+
+
+def test_compact_export_bounds_preview_and_reports_detail_length(
+    tmp_path: Path,
+) -> None:
+    item = campaign(title="詳細あり", end_date=TODAY)
+    detail = "詳" * 900
+    item.raw_text = f"[CARD]\nカード\n\n[DETAIL]\n{detail}"
+
+    envelope = write_campaign_export(
+        [item],
+        output_path=tmp_path / "campaigns_compact.json",
+        today=TODAY,
+        exported_at=EXPORTED_AT,
+    )
+    exported = envelope["campaigns"][0]
+
+    assert len(exported["raw_text_preview"]) == 803
+    assert exported["raw_text_preview"].endswith("...")
+    assert exported["has_detail_text"] is True
+    assert exported["detail_text_length"] == 900
 
 
 @pytest.mark.parametrize(
@@ -165,7 +209,10 @@ def test_export_and_summary_cli_with_seeded_database(
 
     assert export_result.exit_code == 0
     assert "Exported 2 campaigns" in export_result.stdout
-    assert (exports_dir / "campaigns.json").is_file()
+    assert (exports_dir / "campaigns_compact.json").is_file()
+    full_result = runner.invoke(app, ["export", "--profile", "full"])
+    assert full_result.exit_code == 0
+    assert (exports_dir / "campaigns_full.json").is_file()
     assert summary_result.exit_code == 0
     assert "Campaigns: 2" in summary_result.stdout
     assert "Active: 1" in summary_result.stdout
